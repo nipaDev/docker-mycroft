@@ -51,7 +51,7 @@ RUN set -x \
 	&& apt-get install -yq --no-install-recommends \
 		mimic \
 	# Checkout Mycroft
-	&& git clone https://github.com/MycroftAI/mycroft-core.git /opt/mycroft \
+	&& git clone -b french https://github.com/nipaDev/mycroft-core.git /opt/mycroft \
 	&& cd /opt/mycroft \
 	&& mkdir /opt/mycroft/skills \
 	# git fetch && git checkout dev && \ this branch is now merged to master
@@ -64,16 +64,33 @@ RUN set -x \
 	&& touch /opt/mycroft/scripts/logs/mycroft-skills.log \
 	&& touch /opt/mycroft/scripts/logs/mycroft-audio.log \
 	&& /opt/mycroft/msm/msm default \
+	# install the French dictionary fr.dict from the CMUSphinx project on SourceForge
+	&& mkdir -p /usr/local/share/pocketsphinx/model/fr/fr \
+	&& wget https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/French/fr.dict/download -O fr.dict \
+	&& cp fr.dict /usr/local/share/pocketsphinx/model/fr \
+	# we download the acoustic model cmusphinx-fr-ptm-5.2.tar.gz from the CMUSphinx project on SourceForge
+	&& wget https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/French/cmusphinx-fr-ptm-5.2.tar.gz/download -O cmusphinx-fr-ptm-5.2.tar.gz \
+	&& tar -xzf cmusphinx-fr-ptm-5.2.tar.gz \
+	&& cp cmusphinx-fr-ptm-5.2/* /usr/local/share/pocketsphinx/model/fr/fr \
+	# we download the French language model fr-small.lm.gz from the CMUSphinx project on SourceForge.
+	&& wget https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/French/fr-small.lm.gz/download -O fr-small.lm.gz \
+	&& gzip -d fr-small.lm.gz \
+	&& mv fr-small.lm /usr/local/share/pocketsphinx/model/fr \
+	# install French in the Mycroft directories
+	&& mkdir /opt/mycroft/mycroft/client/speech/recognizer/model/fr \
+	&& ln -s /usr/local/share/pocketsphinx/model/fr/fr /opt/mycroft/mycroft/client/speech/recognizer/model/fr/hmm \
+	&& cp /usr/local/share/pocketsphinx/model/fr/fr.dict /opt/mycroft/mycroft/client/speech/recognizer/model/fr/fr.dict \
+
 	&& apt-get install -f \
 	&& apt-get -y autoremove \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Set the locale
-RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+RUN locale-gen fr.UTF-8
+ENV LANG fr.UTF-8
+ENV LANGUAGE fr:fr
+ENV LC_ALL fr.UTF-8
 
 WORKDIR /opt/mycroft
 COPY startup.sh /opt/mycroft
